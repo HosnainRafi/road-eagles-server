@@ -21,6 +21,7 @@ async function run() {
     const usersCollection = database.collection("user");
     const servicesCollection = database.collection("services");
     const eventsCollection = database.collection("events");
+    const reviewsCollection = database.collection("reviews");
 
     //getServices
     app.get('/services', async (req, res) => {
@@ -49,6 +50,14 @@ async function run() {
       res.json(result);
     })
 
+    app.put('/users/admin', async (req, res) => {
+      const user = req.body;
+      const filter = { email: user.email };
+      const updateDoc = { $set: { role: 'admin' } };
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.json(result);
+    })
+
     // add events
     app.post("/addEvent", async (req, res) => {
       console.log(req.body);
@@ -63,6 +72,18 @@ async function run() {
       const query = { _id: ObjectId(id) };
       const service = await servicesCollection.findOne(query);
       res.send(service);
+    })
+
+    //Admin
+    app.get('/users/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      let isAdmin = false;
+      if (user?.role === 'admin') {
+        isAdmin = true;
+      }
+      res.json({ admin: isAdmin });
     })
 
     //My events
@@ -81,7 +102,69 @@ async function run() {
       const result = await eventsCollection.deleteOne(query);
       //   console.log(result);
       res.json(result);
-  })
+    })
+
+    //AddServices
+    app.post('/addServices', async (req, res) => {
+      const newService = req.body;
+      const result = await servicesCollection.insertOne(newService);
+      res.json(result);
+    })
+
+    //All Events
+    app.get("/allEvents", async (req, res) => {
+      const result = await eventsCollection.find({}).toArray();
+      // console.log(result);
+      res.send(result);
+    });
+
+    //Update User
+    app.put("/updateState/:id", async (req, res) => {
+      console.log(req.params.id, req.body.state);
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          state: req.body.state,
+        },
+      };
+      const result = await eventsCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
+      console.log(result);
+      res.json(result);
+    });
+
+    //Add Review
+    app.post('/user/review', async (req, res) => {
+      const review = req.body;
+      const result = await reviewsCollection.insertOne(newService);
+      res.json(result);
+    })
+
+    //Add admin
+    app.put("/users/adminAdd", async (req, res) => {
+      const email = req.body.email;
+      const filter = { email: email };
+      console.log(email);
+      const isUser = await usersCollection.findOne({ email: email });
+      console.log(isUser);
+      if (isUser) {
+        const updateDoc = {
+          $set: {
+            role: "admin",
+          },
+        };
+        const result = await usersCollection.updateOne(filter, updateDoc);
+        console.log(result);
+        res.json(result);
+      } else {
+        res.json({ message: "the user does not exist here" });
+      }
+    });
 
   }
   finally {
