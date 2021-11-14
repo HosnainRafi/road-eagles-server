@@ -141,7 +141,7 @@ async function run() {
     //Add Review
     app.post('/user/review', async (req, res) => {
       const review = req.body;
-      const result = await reviewsCollection.insertOne(newService);
+      const result = await reviewsCollection.insertOne(review);
       res.json(result);
     })
 
@@ -165,6 +165,26 @@ async function run() {
         res.json({ message: "the user does not exist here" });
       }
     });
+
+    //Get review
+    app.get('/user/review', async (req, res) => {
+      const cursor = reviewsCollection.find({});
+      const services = await cursor.toArray();
+      // console.log(services);
+      res.send(services);
+    })
+
+    //Delete Service
+    //delete service
+    app.delete("/deleteService/:id", async (req, res) => {
+      console.log(req.params.id);
+      const _id = req.params.id;
+      const filter = { _id: ObjectId(_id) };
+      const result = await servicesCollection.deleteOne(filter);
+      console.log(result);
+      res.json(result);
+    });
+
 
   }
   finally {
